@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet">
+    <title>Multi-Carrusel 3D Jerárquico</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        background-image: linear-gradient(#ffffff,#dddddd);
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        color: #fff;
+        font-family: 'Oswald';
+        text-align: center;
+        background-image: url('fondo.gif');
+        background-repeat: no-repeat;
+        background-size: 100% 100%;
+        background-position: center;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+    }
+    .contenedor-father{
+        width: 1050px;
+        height: 2070px;
+        margin: 400px auto;
+    }
+    
+    #main-menu {
+        position: absolute;
+        width: 100%;
+        text-align: center;
+        margin: 0 auto;
+        bottom: 20%;
+        left: 56%;
+        transform: translate(-50%, -50%);
+        font-size: 29px;
+        z-index: 100;
+        display: flex;
+        gap: 25px;
+        padding: 15px 15px;
+        padding-left: 8px;
+        border-radius: 50px;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.4s, visibility 0.4s;
+    }
+
+    #main-menu.visible {
+        opacity: 1;
+        visibility: visible;
+    }
+    #main-menu a {
+        color: #ccc;
+        text-decoration: none;
+        font-family: 'Oswald';
+        font-weight: bold;
+        text-transform: uppercase;
+        text-shadow: 0 0 5px #000;
+        padding: 10px 0;
+        position: relative;
+        transition: color 0.3s;
+    }
+    #main-menu a:hover {
+        color: #fff;
+    }
+    #main-menu a::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: #e34f12;
+        transition: width 0.3s ease-out;
+    }
+    #main-menu a:hover::after {
+        width: 100%;
+    }
+    #main-menu.locked a {
+        pointer-events: none;
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+    main {
+        flex-grow: 1;
+        display: grid;
+        place-items: center;
+        width: 100%;
+        position: relative;
+    }
+
+    .slider-container {
+        margin-top: 500px;
+        width: 340px;
+        height: 370px;
+        perspective: 1950px;
+        cursor: grab;
+    }
+
+    .slider-container:active {
+        cursor: grabbing;
+    }
+    
+    .slider {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 1.7s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s ease-out;
+    }
+    
+    .slider.is-changing {
+        opacity: 0;
+        transform: perspective(1000px) rotateY(360deg) scale(0.5);
+    }
+
+    .slider span {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        transform-origin: center;
+        transform-style: preserve-3d;
+    }
+    .slider span img {
+        position: absolute;
+        top: 0;
+        left: -30px;
+        width: 100%;
+        height: 100%;
+        border-radius: 10px;
+        object-fit: cover;
+        transition: transform 0.5s ease, border 0.5s ease;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        -webkit-box-reflect: below 1px linear-gradient(transparent, transparent, #0002);
+    }
+    .slider span.active img {
+        transform: scale(1.3) translateZ(-850px);
+    }
+
+    .floor-text-fixed {
+        position: absolute;
+        bottom: 80%;
+        left: 50%;
+        transform: translateX(-50%) rotateX(65deg);
+        z-index: -1;
+        font-family: 'Oswald';
+        font-size: 120px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        color: #0747a1;
+        text-shadow:
+            0 0 5px #fff,
+            0 0 10px #fff,
+            0 0 20px #0747a1,
+            0 0 30px #0747a1,
+            0 0 40px #0747a1;
+        transition: opacity 0.5s;
+    }
+
+    .floor-text-ceneris {
+        width: 100%;
+        margin: 0 auto;
+        position: absolute;
+        top: 1%;
+        left: 50%;
+        padding-left: 40px;
+        transform: translateX(-50%);
+        z-index: -1;
+        font-family: 'Oswald';
+        font-size: 180px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        color: #0747a1;
+        text-shadow:
+            0 0 5px #fff,
+            0 0 10px #fff,
+            0 0 20px #0747a1,
+            0 0 30px #0747a1,
+            0 0 40px #0747a1;
+        transition: opacity 0.5s;
+    }
+    .floor-text-fixed.hidden {
+        opacity: 0;
+    }
+
+    footer { width: 100%; margin-top:400px;padding: 30px 0; display: flex; justify-content: center; }
+    .controls { width: 280px; height: 280px; background-color: #1c1c1c; border-radius: 50%; position: relative; display: flex; justify-content: center; align-items: center; color: white; user-select: none; }
+    .control-button { 
+        position: absolute; 
+        cursor: pointer; 
+        font-size: 40px; 
+        font-weight: bold; 
+        color: #888; 
+        transition: color 0.2s;
+        pointer-events: all; 
+        text-transform: uppercase;
+    }
+    .control-button.locked {
+        color: #555;
+        cursor: not-allowed;
+    }
+    .control-button:hover:not(.locked) { color: #fff; }
+    #menu-button { top: 15px; }
+    #prev-slide { left: 7px; }
+    #next-slide { right: 7px; }
+    #select { width: 130px; height: 130px; background-color: #333; border-radius: 50%; border: 2px solid #555; cursor: pointer; transition: background-color 0.2s; }
+    #select:hover { background-color: #444; }
+    
+    #info-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); justify-content: center; align-items: center; }
+    .modal-content {
+        background-color: rgba(61, 61, 61, 0.7); 
+        border: 1px solid rgba(255,255,255,0.1);
+        padding: 40px;
+        border-radius: 15px;
+        width: 80vw;
+        max-width: 1000px;
+        position: relative;
+    }
+    .modal-grid-container {
+        display: flex;
+        flex-direction: column;
+    }
+    .carousel-container {
+        width: 100%;
+        height: 100%; 
+        overflow: hidden;
+        position: relative;
+        border-radius: 10px;
+    }
+
+    #modal-carousel-track {
+        display: flex; 
+        width: 100%;
+        height: 100%;
+        transition: transform 0.5s ease-in-out;
+    }
+
+    .carousel-slide {
+        width: 100%;
+        flex-shrink: 0;
+        height: auto;
+        object-fit: contain; 
+    }
+
+    .carousel-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        padding: 10px;
+        cursor: pointer;
+        z-index: 10;
+        font-size: 1.5em;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .prev-nav { left: 10px; }
+    .next-nav { right: 10px; }
+
+    .carousel-dots {
+        text-align: center;
+        padding-top: 10px;
+    }
+
+    .dot {
+        height: 10px;
+        width: 10px;
+        margin: 0 5px;
+        background-color: #555;
+        border-radius: 50%;
+        display: inline-block;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .dot.active {
+        background-color: #0747a1;
+    }
+
+    .modal-image-area { 
+        grid-area: 1 / 1 / 3 / 2;
+        height: 100%; 
+    }
+
+    .modal-title {
+        font-size: 2.5em; 
+        color: #0747a1; 
+        margin-bottom: 15px; 
+        text-align: center; 
+    }
+    
+    .modal-desc-area { grid-area: 1 / 2 / 2 / 3; }
+    .modal-desc-area h3 { font-size: 2.5em; color: #0747a1; margin-bottom: 15px; }
+    .modal-desc-area p { font-size: 1.1em; line-height: 1.6; color: #ccc; }
+
+    .modal-specs-area { grid-area: 2 / 2 / 3 / 3; display: flex; }
+    .modal-specs-area .specs-column { flex: 1; }
+    .modal-specs-area h4 { font-size: 1.4em; border-bottom: 2px solid #0747a1; padding-bottom: 10px; margin-bottom: 15px; }
+    .modal-specs-area ul { list-style: none; padding: 0; }
+    .modal-specs-area li { margin-bottom: 10px; color: #bbb; text-align: left;}
+
+    .modal-qr-area {
+        align-self: center;
+        width: 250px;
+        height: 250px;
+        text-align: center;
+    }
+    .modal-qr-area img {
+        width: 240px;
+        height: 200px;
+        background: white;
+        border-radius: 5px;
+    }
+    .modal-qr-area p { margin-top: 10px; color: #aaa; font-weight: bold; }
+    #modal-qr-container {
+        align-self: center;
+    }
+
+    .close-button { position: absolute; top: -15px; right: -15px; width: 35px; height: 35px; line-height: 35px; text-align: center; background: white; color: black; border-radius: 50%; font-size: 24px; font-weight: bold; cursor: pointer; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+    <div class="contenedor-father">
+        <nav id="main-menu"></nav>
+
+        <main>
+            <div class="slider-container">
+                <div class="slider"></div>
+            </div>
+            <div class="floor-text-fixed">CENERIS</div>
+        </main>
+
+        <footer>
+            <div class="controls-wrapper">
+                <div class="controls">
+                    <div id="menu-button" class="control-button">MENÚ</div>
+                    <div id="prev-slide" class="control-button">&#9664;&#9664;</div>
+                    <div id="next-slide" class="control-button">&#9654;&#9654;</div>
+                    <div id="select"></div>
+                </div>
+            </div>
+        </footer>
+
+        <div id="info-modal">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <div class="modal-grid-container">
+                    <div class="modal-image-area">
+                        <h3 id="modal-title"></h3>
+                        <div class="carousel-container">
+                            <div id="modal-carousel-track" class="carousel-track">
+                                </div>
+
+                            <button id="carousel-prev" class="carousel-nav prev-nav">❮</button>
+                            <button id="carousel-next" class="carousel-nav next-nav">❯</button>
+                        </div>
+                        
+                        <div id="carousel-dots" class="carousel-dots"></div>
+                    </div>
+                    <div class="modal-desc-area">
+                        <p id="modal-description"></p>
+                    </div>
+                    <div class="modal-specs-area">
+                        <div class="specs-column">
+                            <h4>Caracteristicas</h4>
+                            <ul id="modal-specs"></ul>
+                        </div>
+                    </div>
+                    <div class="modal-qr-area">
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <h3 style="display: inline-block;">Descargar ficha tecnica</h3>
+                            <span id="product-code-display" style="display: inline-block; font-size: 1em; font-weight: bold;"></span>
+                        </div>
+                        
+                        <div id="modal-qr-container">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+
+    
+
+    <script>
+        let currentModalSlide = 0;
+        let totalModalSlides = 0;
+        let modalCarouselTrack;
+        let modalCarouselContainer;     
+        
+        const galleries = {
+            main: { title: "CENERIS", subgalleries: ['aguaSup-ambiente', 'aguaSub-ambiente', 'HWM', 'calidadA-ambiente', 'conectividad-ambiente'] },
+            'aguaSup-ambiente': {
+                title: "Agua Superficial",
+                subgalleries: [],
+                distanceZ: 790,
+                items: [
+                    {
+                        img: 'ambiente-calidad-02.png',
+                        carouselSlides: [
+                            { type: 'image', src: "ambiente-calidad-02-01.png" },
+                            { type: 'image', src: "ambiente-calidad-02-02.png" },
+                            { type: 'image', src: "ambiente-calidad-02-03.png" },
+                        ],
+                        title: 'Aqua TROLL 500',
+                        description: 'El Aqua TROLL 500 es una sonda multiparamétrica de cinco puertos totalmente adaptable con capacidad para cuatro sensores intercambiables y un limpiador antifouling. Una interfaz para teléfono móvil ofrece datos precisos y permite una calibración simplificada, una vista panorámica de datos y la creación de informes. Perfecta para aplicaciones de verificación puntual y creación de perfiles cuando se usa con un TROLL Com inalámbrico o supervisión a largo plazo con VuLink. Las opciones del medición incluyen temperatura, conductividad, pH/ORP, Rugged Dissolved Oxygen (RDO®), turbiedad, clorofila , ficocianina (BGA-PC), ficoeritrina (BGA-PE), FDOM, petróleo crudo, Rodamina WT, Fluoresceína WT, amonio (ISE), cloruro (ISE) y nitrato (ISE).',
+                        specs: ['Calibración de fábrica 3D: In-Situ realiza una calibración de fábrica de puntos multiples en cada sensor. Esta calibración asegura que el sensor sea lineal en todo su rango y reduce la complejidad de la calibración del usuario.', 'Implementación de bajo mantenimiento: Mantenga bajos los costos de mano de obra y de equipos con un antincrustante avanzado pasivo y activo de menos de 2 pulgadas en todos los sensores y más de 9 meses de duración de la batería. El Aqua TROLL 500 es confiable en entornos desafiantes e ideal para implementaciones a largo plazo en agua dulce y salada.', 'Mayor confiabilidad: El equipo de In-Situ está diseñado para resistir el uso en los entornos más duros. Las características diseñadas para evitar rupturas o fallas incluyen: Sensores de cierre para mayor estabilidad. Cubierta de protección de titanio. Sensores completamente encapsulados. Almacenamiento de tarjeta SD redundante. Diseño de recamara multiple', 'Protección contra errores incorporada: Evite los daños o pérdidas más comunes con: Tornillos con resorte que mantienen los tornillos en su lugar. Limpiador de embrague deslizante para evitar daños en el motor. Sensores inteligentes que encajan en cualquier puerto. Conectores de acoplamiento húmedo que evitan daños por agua. Parachoques antivuelco para mantener el equipo estacionario', 'Sensores de respuesta rápida: Los sensores Aqua TROLL fueron diseñados para admitir aplicaciones de verificación y creación de perfiles en las que el tiempo de respuesta del sensor es crítico.'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '0050700', 
+                        showQr: true
+                    
+                    },
+                    {
+                        img: 'ambiente-calidad-05.png',
+                        
+                        carouselSlides: [
+                            { type: 'image', src: "ambiente-calidad-05-01.png" },
+                            { type: 'image', src: "ambiente-calidad-05-02.png" },
+                            { type: 'image', src: "ambiente-calidad-05-03.png" },
+                       ],
+                        
+                        title: 'Aqua TROLL RDO Sensor',
+                        description: 'El sensor RDO utiliza tecnología RDO, que es el método aprobado por la EPA para la medición óptica de OD. Proporciona una medición precisa y estable del oxígeno disuelto (OD). Esta lámina RDO se ha diseñado para soportar condiciones ambientales adversas y al mismo tiempo proporcionar la mejor precisión entre las de su clase.',
+                        specs: ['Tecnología RDO® patentada:Las láminas de detección RDO se calibran en 90 puntos discretos y los coeficientes se almacenan en la tapa reemplazable. Simplemente presione y estará listo para comenzar, sin ingresar datos ni realizar pasos adicionales.', 'Gorra con sensor inteligente: Los sensores de Oxígeno Disuelto aprobados por EPA son fáciles de usar, con una fórmula de capa multiple resistente a la abrasión, una tapa inteligente que lleva la calibración a bordo e hidratación instantánea para eliminar la necesidad de acondicionamiento antes de su uso.', 'Resistencia a la abrasión: Un sistema de tres capas único que proporciona una resistencia a la abrasión y química inigualable, lo que prolonga la vida útil de la tapa del sensor y amplía la gama de condiciones compatibles.', 'Acondicionador de hidratación instantánea: A diferencia de otros sensores de DO, la fórmula RDO no requiere de 12 a 24 horas de acondicionamiento de hidratación y se lee con precisión dentro de los 90 segundos de pasar de condición seca a húmeda.'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '0063450', 
+                        showQr: true
+                    
+                    },
+                    {
+                        img: 'ambiente-superficial-04.png',
+                        
+                        carouselSlides: [
+                            { type: 'image', src: "ambiente-superficial-04-01.png" },
+                            { type: 'image', src: "ambiente-superficial-04-02.png" },
+                            { type: 'image', src: "ambiente-superficial-04-03.png" },
+                        ],
+                        
+                        title: 'Aqua TROLL 800',
+                        description: 'La sonda multiparamétrica de siete puertos Aqua TROLL 800, totalmente adaptable, con capacidad para seis sensores intercambiables y un limpiador antifouling, es óptima para implementaciones a corto o largo plazo en agua dulce o salada, agua superficial o subterránea. El Aqua TROLL 800 cuenta con batería de larga duración y una interfaz de teléfono móvil que permite una calibración más sencilla, visualización de datos de series temporales en directo y creación de informes. Opciones de sensores de presión con y sin venteo disponibles. El Aqua TROLL 800 se ha diseñado para una precisión y fiabilidad óptimas. Además de los sensores de respuesta rápida, la prevención de errores incorporada y el antifouling activo y pasivo, el Aqua TROLL 800 incluye capacidades de registro interno y utiliza dos baterías alcalinas D para un despliegue continuo sin alimentación externa. Una tarjeta micro SD guarda copias de seguridad de los registros para salvaguardar tus datos',
+                        specs: ['Ecosistema compartido: Reduce la complejidad y el coste con equipos que funcionan en conjunto. Todos los productos Aqua TROLL utilizan el mismo ecosistema: desde dispositivos portátiles hasta cables y comunicaciones.', 'Mayor confiabilidad: Los equipos In-Situ están diseñados para resistir su uso en los entornos más hostiles. Las características diseñadas para evitar roturas o fallos incluyen: Sensores interconectados para mayor estabilidad. Restrictor de titanio. Sensores completamente encapsulados. Almacenamiento redundante en tarjeta SD. Diseño multicámara', 'Sensores de respuesta rápida: Los sensores Aqua TROLL fueron diseñados para soportar aplicaciones de verificación puntual y perfilado donde el tiempo de respuesta del sensor es crítico. El sensor de temperatura utiliza un termistor extendido y barreras aisladas. RDO® tiene una formulación opcional de respuesta rápida y su bombilla redonda aumenta la superficie y mejora el tiempo de respuesta del sensor de pH.'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '0045800', 
+                        showQr: true
+                    
+                    },
+                    {
+                        img: 'ambiente-superficial-06.png',
+                        
+                        carouselSlides: [
+                            { type: 'image', src: "ambiente-superficial-06-01.png" },
+                            { type: 'image', src: "ambiente-superficial-06-02.png" },
+                        ],
+                        
+                        title: 'Aqua TROLL Blue Green Algae Sensor: Phycocyanin',
+                        description: 'Los sensores de cianobacterias de In-Situ ayudan a consultores e investigadores a medir de manera más efectiva las cianobacterias ficocianinas en entornos de agua dulce. Entre sus características, cuenta con compensación óptica integrada para corregir la deriva del LED con respecto a la temperatura y el tiempo, desestimación de luz ambiental para un rendimiento más fiable y frecuencias ópticas aisladas para minimizar la interferencia y mejorar la precisión',
+                        specs: ['Compensación óptica integrada: La Compensación Óptica Integrada utiliza un segundo detector para medir la desviación del LED y compensar automáticamente cada lectura.', 'Bandas espectrales de baja interferencia: Cada fluorómetro excita un rango más pequeño del espectro de luz, lo que aumenta la precisión y minimiza la interferencia de otras fuentes de fluorescencia.', 'Frecuencias ópticas aisladas: Cada sensor óptico In-Situ funciona a una frecuencia única que crea una firma digital para cada fuente de luz. Esta firma permite que el sistema separe la interferencia entre sensores y mejora la precisión general del sistema.', 'Rechazo de luz ambiental: El rechazo de luz ambiental separa la luz del sensor de otras fuentes de luz ambiental, lo que permite el mismo grado de precisión independientemente de las condiciones de iluminación o la ubicación de implementación.'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '0038920', 
+                        showQr: true
+                    
+                    },
+                    {
+                        img: 'ambiente-superficial-07.png',
+                        
+                        carouselSlides: [
+                            { type: 'image', src: "ambiente-superficial-07-01.png" },
+                        ],
+                        
+                        title: 'Aqua TROLL FDOM Sensor',
+                        description: 'Este sensor Aqua TROLL supervisa la materia orgánica disuelta fluorescente (FDOM), que es una fracción de la materia orgánica disuelta cromofórica (CDOM) que emite fluorescencia cuando se excita con luz ultravioleta cercana',
+                        specs: ["Compensación de Deriva: Óptica integrada",
+
+                                "Objetivo de la Compensación: Regular la deriva del LED (temperatura y tiempo)",
+
+                                "Frecuencias Ópticas: Aisladas",
+
+                                "Bandas Espectrales: De baja interferencia",
+
+                                "Resultado: Minimizar la interferencia y mejorar la precisión"],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '0096070', 
+                        showQr: true
+                    
+                    },
+                    {
+                        img: 'ambiente-superficial-09.png',
+                        
+                        carouselSlides: [
+                            { type: 'image', src: "ambiente-superficial-09-01.png" },
+                        ],
+                        
+                        title: '50 SERIES SCHEDA TECNICA',
+                        description: 'La Consola CHEMITEC Serie 50 es un controlador multiparamétrico diseñado para el análisis en línea (ON-LINE) y el control de procesos de tratamiento de agua. Destaca por su versatilidad, permitiendo la conexión de múltiples sensores digitales y analógicos, y su arquitectura "Plug & Play" con autorreconocimiento de sensores. Es una solución compacta y escalable que ofrece capacidades avanzadas de registro de datos, visualización gráfica de tendencias y control de dosificación o lavado mediante relés y salidas analógicas. Es ideal para monitorear una amplia gama de parámetros de calidad de agua.',
+                        specs: ["Configuraciones: Disponible en tres configuraciones seleccionables de hasta dos, cuatro y ocho mediciones simultáneas.",
+
+                            "Sensores Compatibles: Enlazable a toda la gama de sensores digitales Chemitec, más un ingreso universal para sensores de tipo 4-20mA.",
+
+                            "Visualización: Display 480x272 para visualización simultánea de mediciones digitales con variación de color en función de eventos de alarma.",
+
+                            "Tendencias: Visualización de los 'trend' de las mediciones en forma gráfica.",
+
+                            "Registro de Datos (Datalogger): Interno con capacidad de 250.000 registros, descargables mediante USB o RS485.",
+
+                            "Salidas Analógicas: Programables para mediciones repetidas, control PID y temperatura.",
+
+                            "Relé de Salida: Para la regulación del set point.",
+
+                            "Ingreso Analógico: Para funciones perturbadoras o visualización adicional de mediciones.",
+
+                            "Ingreso Digital: Para deshabilitación de dosificación."],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'serie50', 
+                        showQr: true
+                    
+                    },
+                    {
+                        img: 'ambiente-hwm-10.png',
+                        carouselImages: ["ambiente-hwm-10-01.png"],
+                        title: 'Air Quality Monitoring System',
+                        description: 'Polludrone es un monitor versátil de calidad del aire que mide múltiples parámetros ambientales, como PM1, PM2.5, PM10, CO, CO2, SO2, NO2, O3 y H2S, además de ruido ambiental, luz, rayos UV, temperatura y humedad. Este enfoque multiparamétrico proporciona información detallada sobre la salud ambiental de cualquier instalación, lo que lo hace ideal para diversas aplicaciones. Ya sea para la monitorización de barrios o la gestión de grandes infraestructuras, Polludrone es su solución integral, garantizando condiciones ambientales óptimas en todas partes.',
+                        "specs": [
+                            "Configuraciones: Disponible en tres, hasta dos, cuatro y ocho mediciones simultáneas, seleccionables libremente.",
+                            "Sensores Compatibles: Conectable a toda la gama de sensores digitales Chemitec, más una entrada universal para sensores de tipo 4-20mA.",
+                            "Visualización: Display 480x272 con variación de color en función de eventos de alarma.",
+                            "Tendencias: Visualización de los 'trend' de las mediciones en forma gráfica.",
+                            "Registro de Datos (Datalogger): Interno con capacidad de 250.000 registros, descargables mediante USB o RS485.",
+                            "Salidas Analógicas: Programables para mediciones repetidas, control PID y temperatura.",
+                            "Relé de Salida: Para la regulación del set point.",
+                            "Ingreso Analógico: Para funciones perturbadoras o visualización adicional de mediciones.",
+                            "Ingreso Digital: Para deshabilitación de dosificación."
+                        ],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'pullodrone', 
+                        showQr: true
+                        
+                    
+                    },
+                    
+                    {
+                        img: 'ambiente-fugas-04.png',
+                        carouselImages: ["ambiente-fugas-04-01.png", "ambiente-fugas-04-02.png"],
+                        title: 'FloPro XCi',
+                        description: 'El FloPro XCi puede utilizarse para monitorizar prácticamente cualquier sensor de cantidad y calidad de agua, así como equipos y activos vitales de minería, municipales e industriales. Ya sea que necesite medir caudal, conductividad, pH y pluviosidad, o utilizar un sensor ultrasónico de profundidad descendente para medir los niveles del estanque, FloPro es totalmente adaptable a sus necesidades. Además, FloPro se integra fácilmente con sistemas SCADA/telemetría. FloPro XCi es fácil de instalar, usar y prácticamente no requiere mantenimiento. Gracias a los sensores ultrasónicos de velocidad Doppler MACE de última generación, FloPro no tiene piezas móviles y minimiza la obstrucción del flujo. Los sensores ultrasónicos de velocidad Doppler MACE producen resultados superiores en una amplia gama de condiciones hidráulicas, como las que se encuentran en los flujos de aguas residuales y pluviales. Incluso con pendiente desconocida, sobrecarga o flujo inverso, FloPro genera datos precisos y repetibles en todo momento.',
+                        specs: ["Producto Central: FloPro XCi (Interfaz multitarjeta)",
+                            "Propósito: Monitoreo eficiente de sensores de cantidad/calidad de agua y activos (minería, municipal, industrial)",
+                            "Funcionalidad: Solución compacta e inteligente con acceso remoto a datos, alertas y alarmas",
+                            "Conectividad: Compatible con telemetría (control eficaz y económico, respuesta rápida)",
+                            "Ventaja: Adaptable a requisitos de monitoreo actuales y futuros"],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'florPro', 
+                        showQr: true
+                    
+                    },
+                ]
+            },
+            'aguaSub-ambiente': {
+                title: "Agua Subterránea",
+                subgalleries: [],
+                distanceZ: 670,
+                items: [
+                    {
+                        img: 'ambiente-subterranea-01.png',
+                        carouselImages: ["ambiente-subterranea-01-01.png", "ambiente-subterranea-01-02.png", "ambiente-subterranea-01-03.png"],
+                        title: 'Level TROLL 500',
+                        description: 'El Level TROLL 500 es excelente para registrar continuamente mediciones de nivel, presión y temperatura del agua. Disponible en rangos de presión con venteo (medido) de hasta 500 psig para compensación atmosférica automática. Los sensores calibrados en todo el rango de presión y temperatura ofrecen datos precisos y su duradero cuerpo de titanio resiste las condiciones más extremas.',
+                        specs: ['Sistema ventilado: Ventilar el cable y el instrumento elimina la presión atmosférica y proporciona la mayor precisión del sistema.', 'Sistema antideriva: Los cables reforzados con kevlar eliminan el estiramiento del cable que puede sugir durante la deriva. Los sensores piezorresistivos de titanio mantienen su presión durante años. La calibración 3D en todo el rango de presión y la temperatura evita variaciones de temperatura y los componentes electrónicos premium de tolerancia estricta se mantienen a lo largo del tiempo.', 'Ecosistema compartido: Reduzca la complejidad y el costo con equipos que funcionan en conjunto. Todos los productos Level TROLL utilizan el mismo ecosistema, desde el dispositivo portátil hasta el cable y la comunicación.'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'LT500DL', 
+                        showQr: true
+                    
+                    },
+                    {
+                        img: 'ambiente-subterranea-02.png',
+                        carouselImages: ["ambiente-subterranea-02-01.png", "ambiente-subterranea-02-02.png"],
+                        title: 'Level TROLL 700',
+                        description: 'Diseñado específicamente para la caracterización de acuíferos, el Level TROLL 700, con cuerpo de titanio, 4 MB de memoria para contener 260 000 puntos de datos, mayor resolución de datos y modos de registro avanzados, es la elección del profesional para obtener resultados precisos y fiables. El Level TROLL 700 proporciona una supervisión continua del nivel, la presión y la temperatura del agua. Disponible en rangos de presión de hasta 500 psig para configuraciones con venteo y 1000 psia para configuraciones sin venteo. Este registrador de datos de primer nivel es óptimo para aplicaciones especializadas. La calibración en 3D de fábrica y nuestro exclusivo sistema antideslizamiento garantizan la precisión. Ofrece una implementación de bajo mantenimiento para ahorrar en tiempo y costes sobre el terreno y, con nuestro ecosistema compartido, puedes integrar fácilmente instrumentación, telemetría dentro del pozo y HydroVu Data Services.',
+                        specs: ['Calibración de fábrica 3D: Los sensores de presión de titanio piezorresistivos están calibrados a presión y temperatura completa para mejor precisión en todas las temperaturas de campo y están certificados para calibración de fábrica trazable NIST®.', 'Calibraciones certificadas: In-Situ realiza una verificación independiente en cada sensor para confirmar que fue fabricado y calibrado correctamente.', 'Ver sitio: Utilice la poderosa aplicación móvil VuSitu para ver los resultados instantáneamente desde su teléfono inteligente o tableta cuando esté conectado al Rugged TROLL Com Inalámrbico. Las características incluyen Asistente de configuración de registros, Archivo de datos universal y Administración de datos simple para mejorar la eficiencia y los resultados.'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'LT700DL', 
+                        showQr: true
+                    
+                    },
+                    {
+                        img: 'ambiente-calidad-01.png',
+                        carouselImages: ["ambiente-calidad-01-01.png", "ambiente-calidad-01-02.png"],
+                        title: 'Aqua TROLL 200',
+                        description: 'Este instrumento fiable todo en uno mide y registra el nivel y la presión del agua, la conductividad y la temperatura. Este sensor está disponible en configuraciones con y sin venteo y presenta un diseño de celdas de conductividad único que permite un amplio rango de medición precisa en un instrumento de diámetro estrecho. El cuerpo de titanio resiste la corrosión y su cuerpo de menos de 1 pulgada se adapta a pozos de diámetro estrecho, lo que hace que el registrador de datos Aqua TROLL 200 sea ideal para proyectos costeros, de reparación y de supervisión de agua de minas. La intuitiva aplicación móvil VuSitu se combina perfectamente para proporcionar configuración automática, calibración simplificada, análisis de datos dirigido y creación automatizada de informes.',
+                        specs: ['Calibración de fábrica 3D:A diferencia de los típicos sensores de presión, estos  están calibrados a presión y temperatura completa para brindar precisión, independientemente de la profundidad. Ahorre tiempo y dinero con sensores precalibrados lineales de fábrica y certificados por NIST donde corresponda.', 'Gestión de datos sencilla: Consolide toda la información del sitio en su teléfono inteligente y etiquete los datos con fotos del sitio y coordenadas GPS. Registre datos en su teléfono inteligente y descargue los resultados en un formato de archivo .csv estándar.', 'PrecisiónCable robusto: Los filamentos de Kevlar se aseguran que nuestro cable no se estire ni se rompa. Los conectores de titanio con cierre giratorio permiten conexiones rápidas y confiables, y Kevlar Grip brinda seguridad redundante. Úselo con el divisor de cable resistente para medir múltiples parámetros a varias profundidades simultáneamente.'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'AT2DL', 
+                        showQr: true
+                    },
+                    {
+                        img: 'ambiente-subterranea-04.png',
+                        carouselImages: ["ambiente-subterranea-04-01.png", "ambiente-subterranea-04-02.png", "ambiente-subterranea-04-03.png"],
+                        title: 'Water Level Meter 200',
+                        description: 'Esta cinta premium de grado técnico está certificada por ASME y ofrece la máxima longevidad en el campo. Con cinta de acero de alta resistencia y conductores de acero inoxidable, el Medidor de Nivel de Agua 200 es ideal para medir la profundidad del agua en pozos, perforaciones, equipos de empuje directo y tuberías verticales.',
+                        specs: ["Cinta: Amarilla y fácil de leer",
+                                "Resistencia de la Cinta: Resiste al estiramiento hasta 127 kg (280 lbs)",
+                                "Modos de Lectura: Nivel estático y modo de reducción (para pruebas de bomba/poco flujo)",
+                                "Sonda: Clasificación IP68",
+                                "Capacidad de Inmersión de la Sonda: Hasta 300 m (1,000 ft) para determinar el fondo del pozo",
+                                "Características del Carrete: Colgador de pozo integrado y guía (para despliegue rápido)",
+                                "Manejo de la Cinta: Flexible, no se adhiere a superficies húmedas o carcasas de pozos",
+                                "Ergonomía: Asa de transporte revestida de vinilo para rebobinado fácil"],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'WLM200', 
+                        showQr: true
+                    },
+                    {
+                        img: 'ambiente-subterranea-05.png',
+                        carouselImages: ["ambiente-subterranea-05-01.png", "ambiente-subterranea-05-02.png"],
+                        title: 'GeoNet Digital Vibrating Wire Interfaces',
+                        description: 'Las interfaces digitales de cuerda vibrante de la serie 8960 amplían la capacidad de los registradores de datos GeoNet , de malla , celulares y Wi-Fi® multicanal y direccionables, permitiendo a los usuarios añadir sensores adicionales al sistema. La serie 8960 también permite la lectura de sensores de cuerda vibrante desde clientes Modbus® RTU mediante acondicionamiento de señal y direccionamiento digital.',
+                        specs: ["Compatibilidad de Interfaces (4 y 8 canales): Celdas de carga de cuerda vibrante modelo 4900",
+                                "Capacidad de Conexión: Varias celdas de carga y sensores VW a una sola interfaz",
+                                "Restricción de Conexión: El número total de medidores VW no debe exceder la capacidad de canales de la interfaz",
+                                "Dispositivo de Conexión Adicional: Convertidor de bus direccionable modelo 8020-38",
+                                "Función del Convertidor: Conectar cadenas de sensores direccionables a PCs, lectores, registradores de datos y PLCs",
+                                "Actuación del Convertidor: Actúa como puente (RS-485)",
+                                "Protocolos de Comunicación del Convertidor: TTL o USB"],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '8960', 
+                        showQr: true
+                    
+                    },
+                    {
+                        img: 'ambiente-calidad-07.png',
+                        carouselImages: ["ambiente-calidad-07-01.png", "ambiente-calidad-07-02.png"],
+                        title: 'Aqua TROLL 500 and 600 Wiper',
+                        description: 'El limpiador de doble cara Aqua TROLL limpia los sensores y el restrictor simultáneamente para extender el tiempo entre limpiezas durante la implementación de la sonda multiparámetro Aqua TROLL 500 o 600.',
+                        specs: [],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '0063500', 
+                        showQr: true
+                    
+                    },
+                    
+                ]
+            },
+            'HWM': {
+                title: "HWM",
+                subgalleries: [],
+                distanceZ: 670,
+                items: [
+                    {
+                        carouselSlides: [
+                            { type: 'image', src: "ambiente-hwm-01-01.png" },
+                            { type: 'video', src: "https://www.youtube.com/embed/fFN4Q3hT2-g?si=ekzhiTVYvD-UxORE" } 
+                        ],
+                        img: 'ambiente-hwm-01.png',
+                        title: 'Permanet®+ SU',
+                        description: 'Localización remota de fugas en la red de agua mediante Sensorización 4.0 que reduce a horas el tiempo desde que es detectada una fuga por los sensores, hasta su localización de forma automática en las oficinas de la compañía sobre un mapa georreferenciado. El sistema PermaNET+® SU combina el sensor de ruido de fugas Permalog® y una versátil tecnología de transmisión de datos IoT, que permite crear de forma sencilla y escalonada una red fija permitiendo una gestión más eficiente del agua no registrada (ANR). Las altas funcionalidades del PermaNET+® SU y la aplicación TTSQL para la gestión remota de los dispositivos ofrece una solución tecnológica para la gestión de fugas, limitando en la mayoría de los casos el trabajo de los buscafugas a la confirmación en campo de la fuga detectada y localizada por el sistema.',
+                        specs: ["Compensación: Óptica integrada para deriva de LED (temperatura y tiempo)",
+                                "Frecuencias: Ópticas aisladas",
+                                "Bandas espectrales: De baja interferencia",
+                                "Precisión: Mejorada"],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'PERM', 
+                        showQr: true
+                    },
+                    {
+                        carouselSlides: [
+                            { type: 'image', src: "ambiente-hwm-02-01.png" },
+                            { type: 'video', src: "https://www.youtube.com/embed/Hm7w6fOwhvg?si=j-DVj_fhQTMEim63" } 
+                        ],
+                        img: 'ambiente-hwm-02.png',
+                        title: 'akwaMetric',
+                        description: 'akwaMetric es una estación multiparamétrica para la monitorización autónoma de calidad del agua, presión y caudal en redes de distribución de agua potable y otras ubicaciones remotas que carecen de acometida eléctrica. Las innovaciones tecnológicas juegan un papel de vital importancia en la prevención de riesgos a los que nuestras redes de abastecimiento están expuestas. Llevamos trabajando en esta línea desde hace más de 25 años, conjugando innovación y calidad, con conocimiento y experiencia. Como resultado de todo ello, nace akwaMetric, una herramienta ideada y diseñada con el objetivo de facilitar a los gestores de las redes la implantación de los Planes Sanitarios del Agua (PSA), controlando los riesgos y asegurando el suministro de agua salubre y limpia, desde su captación hasta el grifo del consumidor final.',
+                        "specs": [
+                            "Sistema completamente autónomo: disponibles 2 sistemas de alimentación en función de la configuración",
+                            "Mínimo consumo de agua: el akwaMetric puede trabajar en modo cíclico para minimizar el consumo de agua, haciendo uso de la funcionalidad HydroSwitch",
+                            "Sistema modular: la naturaleza modular del sistema es la clave de la flexibilidad del akwaMetric, que permite adaptarlo a los requerimientos de cada ubicación"
+                        ],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'AKWA', 
+                        showQr: true
+                    },
+                    
+                    {
+                        carouselSlides: [
+                            { type: 'image', src: "ambiente-hwm-03-01.png" },
+                            { type: 'video', src: "https://www.youtube.com/embed/uyMgApKOUuk?si=bD3SlVydYifeqimX" } 
+                        ],
+                        img: 'ambiente-hwm-03.png',
+                        title: 'Pegasus P3 Punto Crítico',
+                        description: 'Como una extensión al reconocido controlador de válvulas Pegasus Pro, HWM Latinoamérica desarrolló el sistema de control por punto crítico Pegasus P3. Este sistema permite, además de regular la presión por tiempo y/o caudal, modular la presión mínima o máxima que se quiere mantener, bajo cualquier circunstancia, en una zona desfavorable de la zona hidráulica.',
+                        "specs": [
+                            "Extensión del controlador de válvulas Pegasus Pro",
+                            "Regula la presión por tiempo y/o caudal",
+                            "Modula la presión mínima o máxima a mantener, bajo cualquier circunstancia, en una zona desfavorable de la zona hidráulica",
+                            "Constante comunicación entre el registrador (punto crítico) y el controlador (válvula reguladora) para actuaciones rápidas, precisas y seguras",
+                            "Trabajo autónomo del controlador Pegasus Pro si se pierde la comunicación, utilizando la última tabla de control optimizada en memoria",
+                            "Múltiples consignas en el punto crítico en función de las horas del día o del caudal demandado",
+                            "Interfaz web y constantes comunicaciones para cambiar consignas de presión o alternar modos de control de forma fácil, segura y rápida"
+                        ],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'PEG1', 
+                        showQr: true
+                    },
+                    {
+                        carouselSlides: [
+                            { type: 'image', src: "ambiente-hwm-04-01.png" },
+                            { type: 'video', src: "https://www.youtube.com/embed/OR4G_D_Dr1A?si=eBj4Uqkx97y5-I8V" } 
+                        ],
+                        img: 'ambiente-hwm-04.png',
+                        title: 'Multilog LX 2',
+                        description: 'Multilog LX2 es un registrador de datos de telemetría altamente versátil, alimentado por batería, que incorpora una conveniente entrada serial que admite compatibilidad con una amplia variedad de sensores y medidores, incluido Modbus. Multilog LX2 es una potente solución de registro rápido que ofrece un registro de datos eficaz y una transmisión eficiente.',
+                        "specs": [
+                            "Sincronización del intervalo de pulso: suaviza la lectura de los tiempos establecidos de pulsos poco frecuentes, por ejemplo, flujo nocturno mínimo",
+                            "Registro versátil: hasta 2 entradas de flujo digitales y 1 entrada analógica (presión interna, presión externa o 4-20 mA)",
+                            "Telemetría: estándar de comunicación celular basado en NBIoT LTE con capacidad 2G de respaldo",
+                            "Flexible: hasta 25 Hz y registro de ventanas (a petición)",
+                            "Registro rápido: registro de hasta 1 segundo, como estándar",
+                            "Grabaciones múltiples: puede grabar una mezcla de valores mínimos, máximos, promedio o puntuales en cada intervalo de muestra",
+                            "Lecturas detalladas: caudal máximo y mínimo real e investigación de picos de presión mediante pseudorregistro",
+                            "Entrada en serie: para conexión a medidores digitales, sensor de nivel SonicSens, registrador de ruido de fugas Permalog+ y sensores Modbus"
+                        ],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'MULT', 
+                        showQr: true
+                    },
+
+                    {
+                        carouselSlides: [
+                            { type: 'image', src: "ambiente-hwm-05-01.png" },
+                            { type: 'image', src: "ambiente-hwm-05-02.png" },
+                            { type: 'video', src: "https://www.youtube.com/embed/QBCFniH-VW4?si=jiZC4JfvhABuZzwf" } 
+                        ],
+                        img: 'ambiente-hwm-05.png',
+                        title: 'Phoenix',
+                        description: 'PHOENIX es un caudalímetro RADAR área/velocidad sin contacto, diseñado especialmente para ríos o grandes canales de riego. El elaborado ángulo de apertura de 32° permite que el radar vea el espectro completo de velocidades sobre el ancho del río o canal. Proporciona medidas muy precisas de caudal bajo un amplio rango de caudales y condiciones. Puede conectarse a la unidad central IFQ® MONITOR, IFQ® LOGGER o registrador Multilog® 2. También puede conectarse opcionalmente a cualquier dispositivo que soporte el protocolo de comunicación Modbus ASCII.',
+                        "specs": [
+                            "Sensor radar no invasivo",
+                            "Obtención de caudales a partir de la conversión de la velocidad medida en la superﬁcie en valores medios de velocidad considerando la sección del río o canal",
+                            "Libre de mantenimiento con funciones de autodiagnóstico",
+                            "Sensores de temperatura, presión y humedad integrados",
+                            "Elevada precisión para un rango muy amplio de caudales y emplazamientos",
+                            "Fácil integración con SCADA’s, PLC’s y sistemas de telemetría"
+                        ],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'PHOE', 
+                        showQr: true
+                    },
+                    {
+                        carouselSlides: [
+                            { type: 'image', src: "ambiente-hwm-06-01.png" },
+                            { type: 'image', src: "ambiente-hwm-06-03.png" },
+                            { type: 'image', src: "ambiente-hwm-06-04.png" },
+                        ],
+                        img: 'ambiente-hwm-06-01.png',
+                        title: 'Solopro',
+                        description: 'SOLOPro+ tiene todo lo necesario para inspeccionar tuberías, documentar sus observaciones y crear informes detallados para entrega in situ. Captura imágenes detalladas en condiciones difíciles y su interfaz ofrece potentes herramientas, incluyendo entrada de observaciones e informes, y acepta memorias USB y SD para facilitar la descarga de datos, vídeo, imágenes e informes. SOLOPro+ tiene WiFi habilitado para permitir el acceso remoto a la información almacenada.',
+                        "specs": [
+                            "Sistema de empuje manual para inspección CCTV de tuberías",
+                            "Unidad de control con pantalla TFT de 8 pulgadas de alta resolución (visible a la luz del sol)",
+                            "Batería interna de iones de litio con autonomía de hasta 6 horas de trabajo",
+                            "Capacidad de grabación de video (MPEG4) y captura de imágenes (JPG) en vivo o desde grabación",
+                            "Almacenamiento interno de 32 GB (expandible a 128 GB) y puertos USB/SD para descarga de datos e informes",
+                            "Conectividad WiFi para acceso remoto a la información almacenada y fácil transferencia de archivos",
+                            "Sonda multifrecuencia integrada (512 Hz, 640 Hz y 33 KHz) para localización del cabezal de cámara",
+                            "Carrete robusto de acero con contador de metros sellado, disponible en 40m, 60m y 100m",
+                            "Software ProPIPE+ y WinCan integrado para la creación de informes de inspección detallados (PDF)"
+                        ],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'SOLOPRO',
+                        showQr: false
+                    },
+                                        {
+                        carouselSlides: [
+                            { type: 'image', src: "ambiente-hwm-07-01.png" },
+                        ],
+                        img: 'ambiente-hwm-07.png',
+                        title: 'Lmic',
+                        description: 'Dentro del campo de los detectores de fugas de agua, la sencillez en el manejo del LMIC, así como la doble funcionalidad de varilla de escucha para válvulas, acometidas y terrenos blandos, y el sensor de escucha para terrenos duros, permiten a este equipo obtener importantes prestaciones en detección de fugas. El LMIC está provisto de un sensor de amplificación que posibilita detectar ruidos de fuga que el oído humano no es capaz de escuchar. Los auriculares disponen de control de volumen independiente y se conectan directamente al módulo sensor, que incorpora la electrónica y la batería Presionando un simple botón, el usuario activa el sistema para su escucha. Una vez se deja de presionar, el circuito de alimentación se desactiva. De esta forma se consigue una gran facilidad de manejo, junto con una larga utilización de la batería.',
+                        "specs": [
+                            "Sensor piezoeléctrico de alta sensibilidad montado sobre una carcasa de goma",
+                            "2 varillas de extensión de 440 mm cada una",
+                            "Baterías recargables con indicación del estado de carga con LED",
+                            "Auriculares ligeros de alta calidad",
+                        ],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'LMIC',
+                        showQr: true
+                    },
+                    {
+                        carouselSlides: [
+                            { type: 'image', src: "ambiente-hwm-08-01.png" },
+                            { type: 'image', src: "ambiente-hwm-08-02.png" },
+                        ],
+                        img: 'ambiente-hwm-08.png',
+                        title: 'Tmic',
+                        description: 'El Tmic® es un detector de fugas de agua ultra portátil, con indicación visual y sonora de la fuga, alternativa de mayor sensibilidad y prestaciones que las varillas mecánicas. Pequeño y ligero, tamaño bolsillo, el TMIC® ayuda a los técnicos a escuchar sonidos en la red de agua que de otro modo serían inaudibles para el oído humano. La unidad funciona con un sencillo pulsador y muestra una indicación visual de niveles de ruido, junto con una excelente reproducción del sonido a través de auriculares inalámbricos Bluetooth de alta calidad, con batería recargable. El auricular dispone de un botón de corte de ruido para evitar daños al oído del usuario. Incorpora una linterna LED que lo hace más práctico para su uso por la noche o en sitios de mucha oscuridad.',
+                        "specs": [
+                            "Sensor piezoeléctrico de alta sensibilidad montado en acero inoxidable",
+                            "Dispone de memoria y visualización simultánea de nivel de ruido actual y nivel de ruido anterior",
+                            "Comunicación inalámbrica Bluetooth entre el sensor y los auriculares",
+                            "Pantalla con 10 indicadores LED rojo/verde",
+                            "Tamaño bolsillo: 170 x 52 x 31 mm",
+                        ],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'TMIC',
+                        showQr: true
+                    },
+                ]
+            },
+            'calidadA-ambiente': {
+                title: "Calidad de Agua",
+                subgalleries: [],
+                distanceZ: 670,
+                items: [
+                    
+                    {
+                        img: 'ambiente-calidad-03.png',
+                        carouselImages: ["ambiente-calidad-03-01.png", "ambiente-calidad-03-02.png", "ambiente-calidad-03-03.png"],
+                        title: 'Aqua TROLL 600',
+                        description: 'El Aqua TROLL 600 es una sonda multiparamétrica de cinco puertos totalmente adaptable con capacidad para cuatro sensores intercambiables y un limpiador antifouling. Una interfaz para teléfono móvil ofrece datos precisos y permite una calibración simplificada, una vista panorámica de datos y la creación de informes. Perfecta para implementaciones a corto y largo plazo. Disponible en opciones con venteo y sin venteo. Las opciones del medición incluyen temperatura, conductividad, pH/ORP, Rugged Dissolved Oxygen (RDO®), turbiedad, clorofila, Ficocianina (BGA-PC), Ficoeritrina (BGA-PE), FDOM, Petróleo crudo, Rodamina WT, Fluoresceína WT, amonio (ISE), cloruro (ISE) y nitrato (ISE).',
+                        specs: ['Calibración de fábrica 3D: In-Situ realiza una calibración de fábrica de puntos multiples en cada sensor. Esta calibración asegura que el sensor sea lineal en todo su rango y reduce la complejidad de la calibración del usuario.', 'Implementación de bajo mantenimiento: Mantenga cotos bajos en mano de obra y equipos con un antincrustante avanzado pasivo y activo de menos de 2 pulgadas en todos los sensores y más de 9 meses de duración de la batería. El Aqua TROLL 600 es confiable en entornos desafiantes e ideal para implementaciones a largo plazo en agua dulce y salada.', 'Mini taza de calibración: El Aqua TROLL 600 usa solo 50 ml de solución de calibración tanto para el enjuague como para la calibración. Esta característica reduce 5 vececs el costo de calibración más que los métodos tradicionales, ahorrando miles de dólares en solución de calibración por año.', 'Sensores de respuesta rápida: Los sensores Aqua TROLL fueron diseñados para admitir aplicaciones de verificación y creación de perfiles en las que el tiempo de respuesta del sensor es crítico.'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '0096400', 
+                        showQr: true
+                    
+                    },
+                    {
+                        img: 'ambiente-calidad-04.png',
+                        carouselImages: ["ambiente-calidad-04-01.png", "ambiente-calidad-04-02.png", "ambiente-calidad-04-03.png"],
+                        title: 'Aqua TROLL Temperature-Conductivity Sensor',
+                        description: 'Esta combinación de un sensor para la temperatura del agua y otro para la conductividad es compatible con Aqua TROLL 500, 600, 700 y 800. Proporciona mediciones de la temperatura del agua, conductividad real y específica, salinidad, sólidos disueltos totales (TDS), resistividad y densidad.',
+                        specs: ['Sensores de respuesta rápida: El innovador sensor de temperatura de In-Situ utiliza aislamiento desarrollado por la NASA para aislar el termistor del sensor. Este aislamiento permite una respuesta rápida a los cambios térmicos en un factor de forma compacto y limpiable. El sensor es una excelente opción tanto para aplicaciones de revisión puntual como a largo plazo.', 'Antiincrustante completo: El diseño del sensor plano que entrelaza patentado por In-Situ habilita la única sonda de menos de 2" con conductividad limpiable. Este diseño extiende significativamente la longitud de despliegue en entornos de suciedad media a alta.'  ],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '0063460', 
+                        showQr: true
+                    
+                    
+                    },
+                    
+                    {
+                        img: 'ambiente-calidad-06.png',
+                        carouselImages: ["ambiente-calidad-06-01.png", "ambiente-calidad-06-02.png", "ambiente-calidad-06-03.png"],
+                        title: 'Aqua TROLL pH / ORP Sensor',
+                        description: 'Esta combinación de sensor de ph y sensor de ORP es compatible con las sondas multiparamétricas Aqua TROLL 500, Aqua TROLL 600, Aqua TROLL 700 y Aqua TROLL 800, que cuentan con un sensor de tres electrodos de unión única con solución de referencia recargable. El sensor permite obtener datos precisos sobre la calidad del agua, con un mantenimiento mínimo y una recopilación de datos simplificada.',
+                        specs: ['Diseño de referencia estable: El Diseño de Referencia Estable reduce significativamente la desviación del sensor de pH de In-Situ, lo que brinda la capacidad innovadora de implementación durante meses sin necesidad de calibración o mantenimiento. ', 'Unión de referencia rellenable: Extienda la vida útil de su sensor de pH con la capacidad de cambiar la solución de referencia del electrodo. A diferencia del gel en los electrodos, la solución de llenado de electrolitos es fácil de cambiar cuando los sensores dan lecturas inexactas o el tiempo de respuesta se vuelve lenta.', 'Sensores de respuesta rápida: Sensores inteligentes están diseñados para alcanzar rápidamente la estabilidad, lo que permite un monitoreo tanto a largo plazo como de verificación puntual.'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '0063470', 
+                        showQr: true
+                    
+                    },
+                    {
+                        img: 'ambiente-calidad-08.png',
+                        carouselImages: ["ambiente-calidad-08-01.png", "ambiente-calidad-08-02.png", "ambiente-calidad-08-03.png"],
+                        title: 'Aqua TROLL Nitrate Ion-Selective Electrode Sensor',
+                        description: 'El sensor ISE de nitrato de in-Situ mide los niveles de nitrato en agua natural, superficial, subterránea, producida y en aplicaciones de acuicultura. ',
+                        specs: ['Diseño de referencia estable: Con Diseño Estable de Referencia, reinventamos el sensor de electrodo para mejorar la estabilidad y extender el tiempo de mantenimiento entre ciclos.', 'Unión de referencia rellenable: El sensor ISE de Nitrato tiene una referencia recargable dedicada. Esto crea una medición independiente, en la que cada sensor está aislado digitalmente de otros sensores de la sonda. Se reduce la desviación del sistema y no se necesecita agregar un sensor de pH para que el sensor de nitrato trabaje', 'Sensores de respuesta rápida: Sensores inteligentes están diseñados para alcanzar rapidamente estabilidad, habilitando la revisión puntual y proceso de aplicaciones.', 'Software: Gráfico'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '0033710', 
+                        showQr: true
+                    
+                    },
+                    {
+                        img: 'ambiente-calidad-09.png',
+                        carouselImages: ["ambiente-calidad-09-01.png"],
+                        title: 'Sensores de pH y ORP - S401 DIG/N - CHEMITEC',
+                        description: 'Sensores digitales diferenciales de pH y ORP para plantas de tratamiento de aguas residuales y aplicaciones industriales agresivas, Electrodo de referencia con puente salino y reserva KCL, Sensor de temperatura incorporado, Protección nominal IP68.',
+                        specs: ['Medición de pH fiable gracias al uso de un medidor digital', 'Comunicación de mediciones mediante el protocolo MODBUS RTU', 'Adecuado para muchas aplicaciones industriales', 'Fácil de conectar al proceso','Temperatura de funcionamiento de 100 °C'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'S401', 
+                        showQr: true
+                    
+                    },
+
+                    {
+                        img: 'ambiente-calidad-10.png',
+                        carouselImages: ["ambiente-calidad-10-01.png", "ambiente-calidad-10-02.png", "ambiente-calidad-10-03.png"],
+                        title: 'Sensor de oxigeno disuelto y temperatura - S423C/OPT',
+                        description: 'Sensor digital de oxígeno disuelto y temperatura. Método óptico de medición de fluorescencia. Cuerpo de acero inoxidable o PVC para aguas residuales y crudas.',
+                        specs: ['Medición fiable de la concentración mediante un proceso de medición óptica', 'Método de medición de luminiscencia dinámica', 'Cuerpo del sensor de PVC rígido AISI 316 o negro', 'Tapa intercambiable para la sustitución del luminóforo','Instalación inmediata y fácil mantenimiento','Capacidad para determinar la salinidad y la presión barométrica para el valor de oxígeno'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'S423C', 
+                        showQr: true
+                    
+                    },
+                ]
+            },
+            'conectividad-ambiente': {
+                title: "Fugas/Accesorios",
+                subgalleries: [],
+                distanceZ: 690,
+                items: [
+                    
+                    {
+                        img: 'ambiente-superficial-03.png',
+                        carouselImages: ["ambiente-superficial-03-01.png", "ambiente-superficial-03-02.png"],
+                        title: 'Cable ventilado resistente con cierre giratorio',
+                        description: 'El RuggedCable con ventilación proporciona comunicación de datos en tiempo real para instrumentos con ventilación in situ. Está fabricado para resistir entornos hostiles y proporcionar una comunicación fiable durante años. Su diseño de 6 hilos permite transmitir Modbus, SDI-12 o 1x4-20 mA. El tubo de ventilación integrado se integra con los instrumentos con ventilación in situ para compensar mecánicamente los cambios barométricos, mejorando así la precisión general del nivel.',
+                        specs: ['Sistema ventilado: Al ventilar el cable y el instrumento se elimina la presión atmosférica y se proporciona una mayor precisión del sistema que la compensación digital.', 'Conectores de bloqueo giratorio: Los conectores Twist-Lock de titanio IP68 proporcionan una vida útil de funcionamiento sin corrosión.', 'Radio de curvatura estrecho: La construcción optimizada del cable permite un radio de curvatura ajustado sin doblar ni romper la línea de ventilación.'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '0052000', 
+                        showQr: true
+                    
+                    },
+                    {
+                        img: 'ambiente-subterranea-03.png',
+                        carouselImages: ["ambiente-subterranea-03-01.png", "ambiente-subterranea-03-02.png", "ambiente-subterranea-03-03.png"],
+                        title: 'Aqua TROLL Port Plugl',
+                        description: 'El Puerto de Conexión Aqual TROLL se utiliza en lugar de un sensor inteligente en la Sonda de Parámetro Multiple Aqua TROLL.',
+                        specs: [],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '0063510', 
+                        showQr: true
+                    
+                    },
+                    {
+                        img: 'ambiente-superficial-02.png',
+                        carouselImages: ["ambiente-superficial-02-01.png", "ambiente-superficial-02-02.png", "ambiente-superficial-02-03.png"],
+                        title: 'TROLL Com Plus',
+                        description: 'TROLL Com Plus proporciona comunicación entre un instrumento in situ y un dispositivo móvil con la aplicación móvil VuSitu. El TROLL Com Plus es compatible con todos los instrumentos Aqua TROLL, Level TROLL, Rugged TROLL y RDO. Admite comunicación inalámbrica y por cable USB-C con VuSitu. Utilice un cable para comunicarse e implementar un instrumento o utilice el adaptador de conexión directa para programarlo sin cable. Este moderno diseño incluye un puerto USB-C con tapa deslizante, un marco moldeado de una sola pieza y amplia compatibilidad con el ecosistema In-Situ. Además, el conector Twist-Lock, la batería de larga duración y los sensores barométricos y de temperatura del aire integrados ofrecen un rendimiento robusto en campo y datos fiables. Este producto se puede utilizar como reemplazo de un TROLL Com inalámbrico, un TROLL Com inalámbrico robusto o un TROLL Com con cable USB.',
+                        specs: ['Ver sitio: TROLL Com Plus permite conectar cualquier instrumento mediante comunicación inalámbrica con dispositivos Android y iPhone. La aplicación líder de In-Situ, diseñada para ser fácil de usar, ofrece un completo conjunto de funciones. Descargue la aplicación gratuita VuSitu y modernice su equipo de monitoreo de calidad del agua.', 'Descubrimiento automático integral: VuSitu utiliza un algoritmo de búsqueda rápida para encontrar automáticamente instrumentos in situ en todas las configuraciones Modbus estándar rápidamente.', 'Recuperación inalámbrica: La comunicación inalámbrica puede ser menos estable que las conexiones por cable. Para compensar esto y garantizar una conexión fiable, el protocolo inalámbrico in situ detecta automáticamente las caídas y se recupera de ellas.'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '0104030', 
+                        showQr: true
+                    },
+                    {
+                        img: 'ambiente-superficial-05.png',
+                        carouselImages: ["ambiente-superficial-05-01.png", "ambiente-superficial-05-02.png", "ambiente-superficial-05-03.png"],
+                        title: 'TROLL Com',
+                        description: 'Utilice el USB-C TROLL Com con todos los instrumentos y registradores de datos con conexión de cierre giratorio In-Situ  para conectar su instrumento a su portátil o PC. El USB-C TROLL Com puede alimentar los instrumentos cuando se conecta a PC y portátiles compatibles.',
+                        specs: ['TROLL Coms de conexión directa: El extremo superior se conecta a un puerto USB-C. El extremo inferior tiene un conector hembra que se conecta directamente al registrador de datos o instrumento.', 'Cable TROLL Coms: El extremo superior se conecta a un puerto USB-C. El extremo inferior tiene un conector macho que se conecta al conector de bloqueo giratorio del cable resistente.'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: 'TC', 
+                        showQr: true
+                    
+                    },
+                    {
+                        img: 'ambiente-superficial-01.png',
+                        carouselImages: ["ambiente-superficial-01-01.png", "ambiente-superficial-01-02.png", "ambiente-superficial-01-03.png"],
+                        title: 'VuLink - In-Situ',
+                        description: 'VuLink® es un registrador de datos y un dispositivo de telemetría celular global que cambiará tu forma de pensar sobre el monitoreo remoto. Nuestra solución lista para usar es fácil de configurar, funciona desde cualquier lugar y ofrece energía duradera. Por lo tanto, nunca tendrás que preocuparte por tu equipo o datos. Es parte de la solución de monitoreo más completa disponible. La instrumentación, la telemetría y el software funcionan juntos dentro del ecosistema compartido de In-Situ para que sea más fácil que nunca recopilar, acceder y administrar los datos.',
+                        specs: ['Configuración con una sola pulsación: VuLink detecta automáticamente cualquier dispositivo de In-Situ con un informe programado o al presionar un botón. Los íconos indican la duración de la batería, la conexión del instrumento, la conexión de red y la conexión HydroVu.', 'Montaje en pozo : El costo de instalación de un poste para el montaje de un dispositivo suele ser mayor que el costo de un sistema completo de telemetría y monitoreo de nivel In-Situ. Ahorre tiempo y dinero instalando el VuLink dentro de un pozo de 2 pulgadas / 50 mm con cubiertas y tapas de pozo estándar para mantenerlo seguro y oculto a la vista.', 'Vida extendida : Proporciona de dos a cinco veces más duración de la batería en dispositivos similares. M1 / NB-IoT ofrece ahorros extraordinarios de energía, una tasa de informes más rápida, VuLink ofrece ahorros exponenciales: más de dos años de duración de la batería en informes de 15 minutos. Acepta baterías primarias alcalinas y de litio que son ampliamente compatibles.'],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '0094840', 
+                        showQr: true
+                    },
+                    {
+                        img: 'ambiente-fugas-01.png',
+                        carouselImages: ["ambiente-fugas-01-01.png", "ambiente-fugas-01-02.png", "ambiente-fugas-01-03.png"],
+                        title: 'Aqua TROLL Fluorescein WT Sensor',
+                        description: 'Este sensor Aqua TROLL es perfecto para su uso en estudios de seguimiento de trazadores que utilizan colorante de fluoresceína.',
+                        specs: ["Compensación: Óptica integrada para deriva de LED (temperatura y tiempo)",
+                                "Frecuencias: Ópticas aisladas",
+                                "Bandas espectrales: De baja interferencia",
+                                "Precisión: Mejorada"],
+                        qr: 'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=7x8gmPbZaE6E9cJwUHTjQl7Iq5baqkpJjsorTtTB_cpUNEo4SklDMTY1UVhOOUhQNlQ4QkVMSUUzNi4u',
+                        productCode: '0096050', 
+                        showQr: true
+                    
+                    },
+                    
+                ]
+            }
+        };
+        const imagePath = 'images/';
+        const inactivityTime = 4000;
+        const autoplaySpeed = 2000;
+
+        let isTransitioning = false;
+        let currentGalleryId;
+        let totalImages, anglePerSlide, distanceZ;
+        let slides, currentSlideIndex, totalRotationAngle;
+        let autoplayTimer, autoplayInterval;
+
+        const slider = document.querySelector('.slider');
+        const prevButton = document.getElementById('prev-slide');
+        const nextButton = document.getElementById('next-slide');
+        const selectButton = document.getElementById('select');
+        const menuButton = document.getElementById('menu-button');
+        const mainMenu = document.getElementById('main-menu');
+        const sliderContainer = document.querySelector('.slider-container');
+        const modal = document.getElementById('info-modal');
+        const closeButton = document.querySelector('.close-button');
+        const floorText = document.querySelector('.floor-text-fixed');
+
+        let isDragging = false;
+        let startX = 0;
+        let movedX = 0;
+        const swipeThreshold = 50; 
+
+        function lockNavigation(lock) {
+            const controls = [prevButton, nextButton, menuButton, selectButton];
+            const menuLinks = mainMenu.querySelectorAll('a');
+            if (lock) {
+                controls.forEach(btn => btn.classList.add('locked'));
+                menuLinks.forEach(link => link.classList.add('locked'));
+            } else {
+                controls.forEach(btn => btn.classList.remove('locked'));
+                menuLinks.forEach(link => link.classList.remove('locked'));
+            }
+        }
+
+        function updateMenu() {
+            mainMenu.innerHTML = '';
+            
+            const mainGallery = galleries.main;
+
+            mainGallery.subgalleries.forEach(subId => {
+                const subGallery = galleries[subId];
+                if (subGallery) {
+                    const link = document.createElement('a');
+                    link.href = "#";
+                    link.dataset.category = subId;
+                    link.textContent = subGallery.title;
+                    mainMenu.appendChild(link);
+                }
+            });
+        }
+
+        async function preloadImages(galleryId) {
+            const gallery = galleries[galleryId];
+            if (!gallery.items) return;
+
+            const promises = [];
+            const cacheBuster = `?v=${Date.now()}`;
+
+            gallery.items.forEach(item => {
+                const imageSrc = imagePath + item.img + cacheBuster;
+                promises.push(new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                    img.src = imageSrc;
+                }));
+            });
+            return Promise.all(promises);
+        }
+
+        async function buildCarousel(galleryId) {
+            if (isTransitioning || currentGalleryId === galleryId) return;
+            isTransitioning = true;
+            stopAutoplay();
+            lockNavigation(true);
+
+            const gallery = galleries[galleryId];
+            const hasItems = gallery.items && gallery.items.length > 0;
+
+            if (hasItems) {
+                slider.classList.add('is-changing');
+                floorText.classList.add('hidden');
+
+                await preloadImages(galleryId);
+                await new Promise(resolve => setTimeout(resolve, 600));
+
+                currentGalleryId = galleryId;
+                totalImages = gallery.items.length;
+                distanceZ = gallery.distanceZ;
+                anglePerSlide = 360 / totalImages;
+                currentSlideIndex = 0;
+                totalRotationAngle = 0;
+
+                let sliderHTML = '';
+                gallery.items.forEach((item, index) => {
+                    const imageSrc = imagePath + item.img;
+                    const rotationY = index * anglePerSlide;
+                    sliderHTML += `<span style="transform: rotateY(${rotationY}deg) translateZ(${distanceZ}px);"><img src="${imageSrc}" alt="${item.title}" data-index="${index}"></span>`;
+                });
+                slider.innerHTML = sliderHTML;
+                slides = document.querySelectorAll('.slider span');
+
+                await new Promise(resolve => setTimeout(resolve, 50));
+                slider.classList.remove('is-changing');
+            } else {
+                currentGalleryId = galleryId;
+                slider.innerHTML = '';
+            }
+
+            floorText.textContent = gallery.title;
+            floorText.classList.remove('hidden');
+
+            updateCarousel();
+            resetAutoplayTimer();
+            isTransitioning = false;
+
+            setTimeout(() => {
+                lockNavigation(false);
+            }, 8000);
+        }
+
+        function updateCarousel() {
+            if (!slides || slides.length === 0) return;
+            slider.style.transform = `perspective(1000px) rotateY(${totalRotationAngle}deg)`;
+
+            const frontImageIndex = (currentSlideIndex + Math.floor(totalImages / 2)) % totalImages;
+            slides.forEach((slide, index) => {
+                slide.classList.toggle('active', index === frontImageIndex);
+            });
+        }
+
+        function startAutoplay() {
+            if (autoplayInterval || !slides || slides.length === 0) return;
+            autoplayInterval = setInterval(() => {
+                totalRotationAngle -= anglePerSlide;
+                currentSlideIndex = (currentSlideIndex + 1) % totalImages;
+                updateCarousel();
+            }, autoplaySpeed);
+        }
+
+        function stopAutoplay() {
+            clearInterval(autoplayInterval);
+            autoplayInterval = null;
+        }
+
+        function resetAutoplayTimer() {
+            stopAutoplay();
+            clearTimeout(autoplayTimer);
+            autoplayTimer = setTimeout(startAutoplay, inactivityTime);
+        }
+
+        function openModal(galleryId, itemIndex) {
+        const item = galleries[galleryId]?.items?.[itemIndex];
+        if (!item) return;
+
+        const qrAreaContainer = document.querySelector('.modal-qr-area');
+        const qrContainer = document.getElementById('modal-qr-container');
+        const codeDisplay = document.getElementById('product-code-display');
+
+        if (codeDisplay) {
+            codeDisplay.textContent = item.productCode ? `Cod.: ${item.productCode}` : '';
+        }
+
+        if (qrAreaContainer) {
+            qrAreaContainer.style.display = 'block';
+
+            if (item.showQr === false || !item.qr) {
+                qrAreaContainer.style.display = 'none';
+                if (qrContainer) qrContainer.innerHTML = '';
+            } else {
+                const urlFinalParaQR = item.qr;
+                
+                console.log("URL que se convertirá en QR (URL base):", urlFinalParaQR);
+
+                if (qrContainer) {
+                    qrContainer.innerHTML = ''; 
+                }
+
+                if (qrContainer && typeof QRCode !== "undefined") {
+                    new QRCode(qrContainer, {
+                        text: urlFinalParaQR, 
+                        width: 280, 
+                        height: 280, 
+                        colorDark : "#000000",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H 
+                    });
+                } else if (qrContainer) {
+                    qrContainer.innerHTML = '<p style="color:#d9534f; font-size: 10px;">Error: QRCode.js no cargado.</p>';
+                }
+            }
+        }
+
+        const slidesData = item.carouselSlides || 
+                            (item.carouselImages ? item.carouselImages.map(src => ({type: 'image', src: src})) : [{type: 'image', src: item.img}]);
+        
+        totalModalSlides = slidesData.length;
+        currentModalSlide = 0;
+        
+        modalCarouselTrack = document.getElementById('modal-carousel-track');
+        const dotsContainer = document.getElementById('carousel-dots');
+        
+        if (modalCarouselTrack && dotsContainer) {
+            modalCarouselTrack.innerHTML = '';
+            dotsContainer.innerHTML = '';
+            
+            slidesData.forEach((slide, index) => {
+                let slideElement;
+                const fullSrc = imagePath + slide.src; 
+                
+                if (slide.type === 'video') {
+                    if (slide.src.includes('youtube.com') || slide.src.includes('youtu.be')) {
+                        slideElement = document.createElement('iframe');
+                        slideElement.src = slide.src;
+                        slideElement.setAttribute('allow', 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture');
+                        slideElement.setAttribute('allowfullscreen', 'true');
+                        slideElement.frameBorder = "0"; 
+                    } else {
+                        slideElement = document.createElement('video');
+                        slideElement.src = fullSrc;
+                        slideElement.controls = true; 
+                        slideElement.preload = 'metadata'; 
+                    }
+                } else {
+                    slideElement = document.createElement('img');
+                    slideElement.src = fullSrc;
+                    slideElement.alt = `Imagen ${index + 1} del producto`;
+                }
+                
+                slideElement.className = 'carousel-slide';
+                modalCarouselTrack.appendChild(slideElement);
+                
+                const dot = document.createElement('span');
+                dot.className = 'dot';
+                dot.dataset.index = index;
+                dot.addEventListener('click', () => moveToModalSlide(index));
+                dotsContainer.appendChild(dot);
+            });
+        }
+
+        document.getElementById('modal-title').textContent = item.title;
+        document.getElementById('modal-description').textContent = item.description;
+
+        const specsList = document.getElementById('modal-specs');
+        specsList.innerHTML = '';
+        
+        const combinedSpecs = item.specs ? item.specs : [];
+        if (item.mediciones_compatibles) {
+            combinedSpecs.push(...item.mediciones_compatibles);
+        }
+        
+        if (combinedSpecs.length > 0) {
+            combinedSpecs.forEach(spec => {
+                const li = document.createElement('li');
+                li.textContent = spec;
+                specsList.appendChild(li);
+            });
+        }
+
+        modal.style.display = 'flex';
+        updateModalCarousel();
+        stopAutoplay();
+        clearTimeout(autoplayTimer);
+    }
+
+
+        function updateModalCarousel() {
+            if (totalModalSlides === 0 || !modalCarouselTrack) return;
+
+            const offset = -currentModalSlide * 100;
+            modalCarouselTrack.style.transform = `translateX(${offset}%)`;
+
+            document.querySelectorAll('.dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentModalSlide);
+            });
+        }
+
+        function moveToModalSlide(index) {
+            currentModalSlide = index;
+            updateModalCarousel();
+        }
+
+        document.getElementById('carousel-prev').addEventListener('click', () => {
+            if (currentModalSlide > 0) {
+                currentModalSlide--;
+                updateModalCarousel();
+            } else if (currentModalSlide === 0 && totalModalSlides > 1) {
+                currentModalSlide = totalModalSlides - 1;
+                updateModalCarousel();
+            }
+        });
+
+        document.getElementById('carousel-next').addEventListener('click', () => {
+            if (currentModalSlide < totalModalSlides - 1) {
+                currentModalSlide++;
+                updateModalCarousel();
+            } else if (currentModalSlide === totalModalSlides - 1 && totalModalSlides > 1) {
+                currentModalSlide = 0;
+                updateModalCarousel();
+            }
+        });
+
+        let modalTouchStartX = 0;
+        let modalIsDragging = false;
+        const modalSwipeThreshold = 50;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.querySelector('.carousel-container'); 
+
+            if (container) {
+                container.addEventListener('touchstart', (e) => {
+                    modalIsDragging = true;
+                    modalTouchStartX = e.touches[0].clientX;
+                });
+
+                container.addEventListener('touchmove', (e) => {
+                });
+
+                container.addEventListener('touchend', (e) => {
+                    if (!modalIsDragging) return;
+                    modalIsDragging = false;
+                    
+                    const touchEndX = e.changedTouches[0].clientX;
+                    const diffX = modalTouchStartX - touchEndX;
+                    
+                    if (Math.abs(diffX) > modalSwipeThreshold) {
+                        if (diffX > 0) {
+                            document.getElementById('carousel-next').click();
+                        } else {
+                            document.getElementById('carousel-prev').click();
+                        }
+                    }
+                });
+            }
+            
+            if (galleries.main && galleries.main.subgalleries && galleries.main.subgalleries.length > 0) {
+                buildCarousel(galleries.main.subgalleries[0]);
+            }
+        });
+
+
+        prevButton.addEventListener('click', () => {
+            if (prevButton.classList.contains('locked')) return;
+            totalRotationAngle += anglePerSlide;
+            currentSlideIndex = (currentSlideIndex - 1 + totalImages) % totalImages;
+            updateCarousel();
+            resetAutoplayTimer();
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (nextButton.classList.contains('locked')) return;
+            totalRotationAngle -= anglePerSlide;
+            currentSlideIndex = (currentSlideIndex + 1) % totalImages;
+            updateCarousel();
+            resetAutoplayTimer();
+        });
+
+        menuButton.addEventListener('click', () => {
+            if (menuButton.classList.contains('locked')) return;
+            updateMenu();
+            mainMenu.classList.toggle('visible');
+            resetAutoplayTimer();
+        });
+
+        mainMenu.addEventListener('click', (event) => {
+            if (event.target.tagName === 'A' && !event.target.classList.contains('locked')) {
+                event.preventDefault();
+                const category = event.target.dataset.category;
+                if (category) {
+                    buildCarousel(category);
+                }
+                mainMenu.classList.remove('visible');
+            }
+        });
+
+        selectButton.addEventListener('click', () => {
+            if (selectButton.classList.contains('locked')) return;
+            if (!slides || slides.length === 0) return;
+            const frontImageIndex = (currentSlideIndex + Math.floor(totalImages / 2)) % totalImages;
+            openModal(currentGalleryId, frontImageIndex);
+        });
+
+        closeButton.addEventListener('click', () => {
+            modal.style.display = 'none';
+            resetAutoplayTimer();
+        });
+
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+                resetAutoplayTimer();
+            }
+        });
+
+        sliderContainer.addEventListener('touchstart', (e) => {
+            if (isTransitioning) return;
+            isDragging = true;
+            startX = e.touches[0].clientX;
+            movedX = 0;
+            stopAutoplay();
+        });
+
+        sliderContainer.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const currentX = e.touches[0].clientX;
+            movedX = currentX - startX;
+        });
+
+        sliderContainer.addEventListener('touchend', () => {
+            if (!isDragging) return;
+            isDragging = false;
+
+            if (movedX > swipeThreshold) {
+                totalRotationAngle += anglePerSlide;
+                currentSlideIndex = (currentSlideIndex - 1 + totalImages) % totalImages;
+            } else if (movedX < -swipeThreshold) {
+                totalRotationAngle -= anglePerSlide;
+                currentSlideIndex = (currentSlideIndex + 1) % totalImages;
+            }
+
+            updateCarousel();
+            resetAutoplayTimer();
+        });
+
+        slider.addEventListener('click', (event) => {
+            const imgElement = event.target.closest('img');
+            if (imgElement) {
+                const itemIndex = parseInt(imgElement.dataset.index);
+                openModal(currentGalleryId, itemIndex);
+            }
+        });
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '-' || e.key === '+')) {
+                e.preventDefault();
+            }
+        });
+        window.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        window.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        document.addEventListener('touchstart', (event) => {
+            if (event.touches.length > 1) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+
+        document.addEventListener('gesturestart', (event) => {
+            event.preventDefault();
+        });
+    </script>
+</body>
+</html>
